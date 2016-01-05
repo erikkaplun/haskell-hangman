@@ -7,7 +7,7 @@
 module Lib where
 
 import           Control.Monad (forever)
-import           Data.Char     (toLower, toUpper, isSpace)
+import           Data.Char     (isSpace, toLower, toUpper)
 import           Data.List     (intercalate)
 import           Data.List     (sort)
 
@@ -26,15 +26,17 @@ someFunc = do
 
 playWord ∷ Int → String → IO ()
 playWord maxMissesG phraseG = go $ beginG maxMissesG phraseG
-  where go game = do
-          clearScreen
-          if isFinishedG game
-            then putStrLn $ outcomeG game
-            else do displayState game
-                    g ← inputGuess
-                    go $ addGuessG g game
+  where
+    go game = do
+      clearScreen
+      if not (isFinishedG game) then do
+        displayState game
+        guess ← inputGuess
+        go $ addGuessG guess game
+      else
+        putStrLn $ outcomeG game
 
-        displayState = putStrLn . intercalate "\n" . render
+    displayState = putStrLn . intercalate "\n" . render
 
 clearScreen = putStrLn $ replicate 30 '\n'
 
@@ -55,8 +57,9 @@ data Guess = One Char
 beginG ∷ Int → String → Game
 beginG maxMissesG phraseG = Game maxMissesG phraseG []
 
-addGuessG g game@Game{..} | g `elem` guessesG = game
-                        | otherwise        = game { guessesG = g : guessesG }
+addGuessG guess game@Game{..}
+  | guess `elem` guessesG = game
+  | otherwise             = game { guessesG = guess : guessesG }
 
 missesG Game{phraseG,guessesG} = reverse $ filter noMatch guessesG
   where noMatch = not . (`matchesG` phraseG)
@@ -66,8 +69,9 @@ isGuessedG  game@Game{..} = null $ getUnguessedG game
 isFailedG   game@Game{..} = not (isGuessedG game) && n >= maxMissesG
   where n = length (missesG game)
 
-outcomeG game@Game{phraseG} | isGuessedG game = "you won!! " ++ (toUpper <$> phraseG) ++ "\n"
-                         | isFailedG  game = "you lost :( the phraseG was " ++ (toUpper <$> phraseG) ++ "\n"
+outcomeG game@Game{phraseG}
+  | isGuessedG game = "you won!! " ++ (toUpper <$> phraseG) ++ "\n"
+  | isFailedG  game = "you lost :( the phraseG was " ++ (toUpper <$> phraseG) ++ "\n"
 
 getUnguessedG Game{guessesG,phraseG} = foldr tryGuess phrase' guessesG
   where tryGuess (One c) acc | c `elem` phraseG = filter (/= c) acc
