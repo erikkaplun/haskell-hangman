@@ -12,16 +12,16 @@ import           Data.List     (intercalate)
 import           Data.List     (sort)
 
 
-someFunc ∷ IO ()
-someFunc = do
+maxMisses = 7
+
+playGame ∷ IO ()
+playGame = do
   clearScreen
   putStrLn "Let's get started...\n"
 
-  let maxMissesG = 7
-
   forever $ do phraseG ← inputWord
                clearScreen
-               playWord maxMissesG phraseG
+               playWord maxMisses phraseG
 
 
 playWord ∷ Int → String → IO ()
@@ -34,14 +34,54 @@ playWord maxMissesG phraseG = go $ beginG maxMissesG phraseG
         guess ← inputGuess
         go $ addGuessG guess game
       else
-        putStrLn $ outcomeG game
+        putStrLn $ renderOutcome game
 
-    displayState = putStrLn . intercalate "\n" . render
+    displayState = putStrLn . intercalate "\n" . renderState
 
 clearScreen = putStrLn $ replicate 30 '\n'
 
+-----------------------
+-- Input & Rendering --
+-----------------------
+
+inputWord = do
+  putStrLn "Enter a word, phrase or sentence:"
+  phraseG ← getLine
+  case phraseG of "" → inputWord
+                  x  → return x
+
+inputGuess = do
+  gs ← trim <$> getLine
+  case gs of []  → inputGuess
+             [c] → return (One c)
+             gs  → return (All gs)
+
 -----------------------------
------------------------------
+
+type Image = [[Char]]
+
+renderState ∷ Game → Image
+renderState game@Game{..} = [renderPhrase, "", renderHangar]
+  where
+    renderPhrase = renderPos <$> phraseG
+    renderPos c | c `elem` guesses' = toUpper c
+                | c == ' '          = ' '
+                | otherwise         = '_'
+    guesses' = concatMap (\case One c → [c]; _ → []) guessesG
+
+    renderHangar = breadcrumbs ++ replicate (0 `max` maxMissesG - n) '-' ++ "|"
+    n = length (missesG game)
+    breadcrumbs = intercalate "," $ (\case One c → [c]; All s → s) <$> missesG game
+
+renderOutcome ∷ Game → String
+renderOutcome game@Game{phraseG}
+  | isGuessedG game = "you won! "                    ++ phrase ++ "\n"
+  | isFailedG  game = "you lost :( the phraseG was " ++ phrase ++ "\n"
+  where phrase = toUpper <$> phraseG
+
+----------------
+-- Game Logic --
+----------------
 
 data Game = Game { maxMissesG ∷ Int
                  , phraseG    ∷ Phrase
@@ -69,10 +109,6 @@ isGuessedG  game@Game{..} = null $ getUnguessedG game
 isFailedG   game@Game{..} = not (isGuessedG game) && n >= maxMissesG
   where n = length (missesG game)
 
-outcomeG game@Game{phraseG}
-  | isGuessedG game = "you won!! " ++ (toUpper <$> phraseG) ++ "\n"
-  | isFailedG  game = "you lost :( the phraseG was " ++ (toUpper <$> phraseG) ++ "\n"
-
 getUnguessedG Game{guessesG,phraseG} = foldr tryGuess phrase' guessesG
   where tryGuess (One c) acc | c `elem` phraseG = filter (/= c) acc
                              | otherwise       = acc
@@ -85,40 +121,9 @@ matchesG (All x) phraseG = x   ==   phraseG
 matchesG (One x) phraseG = x `elem` phrase'
   where phrase' = filter (/= ' ') phraseG
 
-------------------------------
-------------------------------
-
-inputWord = do
-  putStrLn "Enter a word, phrase or sentence:"
-  phraseG ← getLine
-  case phraseG of "" → inputWord
-                  x  → return x
-
-inputGuess = do
-  gs ← trim <$> getLine
-  case gs of []  → inputGuess
-             [c] → return (One c)
-             gs  → return (All gs)
-
------------------------------
-
-type Image = [[Char]]
-
-render ∷ Game → Image
-render game@Game{..} = [renderPhrase, "", renderHangar]
-  where
-    renderPhrase = renderPos <$> phraseG
-    renderPos c | c `elem` guesses' = toUpper c
-                | c == ' '          = ' '
-                | otherwise         = '_'
-    guesses' = concatMap (\case One c → [c]; _ → []) guessesG
-
-    renderHangar = breadcrumbs ++ replicate (0 `max` maxMissesG - n) '-' ++ "|"
-    n = length (missesG game)
-    breadcrumbs = intercalate "," $ (\case One c → [c]; All s → s) <$> missesG game
-
-------------------------
------------------------
+---------------
+-- Utilities --
+---------------
 
 trim = reverse . drop . reverse . drop
   where drop = dropWhile isSpace
