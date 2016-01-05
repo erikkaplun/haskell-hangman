@@ -36,7 +36,7 @@ playWord maxMissesG phraseG = go $ beginG maxMissesG phraseG
       else
         putStrLn $ renderOutcome game
 
-    displayState = putStrLn . intercalate "\n" . renderState
+    displayState = mapM_ putStrLn . renderState
 
 clearScreen = putStrLn $ replicate 30 '\n'
 
