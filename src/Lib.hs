@@ -25,7 +25,7 @@ playGame = do
 
 
 playWord ∷ Int → String → IO ()
-playWord maxMissesG phraseG = go $ beginG maxMissesG phraseG
+playWord maxMisses phrase = go $ beginG maxMisses phrase
   where
     go game = do
       clearScreen
