@@ -3,6 +3,7 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE UnicodeSyntax   #-}
+{-# LANGUAGE ExistentialQuantification   #-}
 
 module Lib where
 
@@ -24,15 +25,34 @@ playGame = do
 
                playPhrase maxMisses phrase
 
+
+data ShouldTrace = Trace | NoTrace
+type Traceable a = (ShouldTrace, a)
+trace   :: a -> Traceable a
+noTrace :: a -> Traceable a
+trace   = \x -> (Trace      , x)
+noTrace = \x -> (NoTrace    , x)
+
+data IOPipe a b = forall c. IOPipe (a -> IO c) (c -> IO b)
+a >>> b = IOPipe a b
+forever_ :: IOPipe a a -> [IOPipe a a]
+forever_ x = let ret = x : ret in ret
+
 playGame' =
   let
-    io1 = \() -> do clearScreen
-                    putStrLn "Let's get started...\n"
-                    inputPhrase
+    io1 :: () -> IO String
+    io1 = \()     -> do clearScreen
+                        putStrLn "Let's get started...\n"
+                        inputPhrase
+    io2 :: String -> IO ()
     io2 = \phrase -> playPhrase maxMisses phrase
-  in
-   let ret = (io1, io2) : ret
-   in ret
+  in forever_ (io1 >>> io2)
+
+runIOPipe :: [IOPipe () ()] -> IO ()
+runIOPipe (IOPipe a b : xs) = forever $ return () >>= a >>= b
+
+playGame'' :: IO ()
+playGame'' = runIOPipe playGame'
 
 playPhrase ∷ Int → String → IO ()
 playPhrase maxMisses phrase = go $ beginG maxMisses phrase
