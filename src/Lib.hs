@@ -3,15 +3,15 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE UnicodeSyntax   #-}
-{-# LANGUAGE ExistentialQuantification   #-}
 
 module Lib where
+
+import           Intrusive
 
 import           Control.Monad (forever)
 import           Data.Char     (isSpace, toLower, toUpper)
 import           Data.List     (intercalate)
 import           Data.List     (sort)
-
 
 maxMisses = 7
 
@@ -25,19 +25,6 @@ playGame = do
 
                playPhrase maxMisses phrase
 
-
-data ShouldTrace = Trace | NoTrace
-type Traceable a = (ShouldTrace, a)
-trace   :: a -> Traceable a
-noTrace :: a -> Traceable a
-trace   = \x -> (Trace      , x)
-noTrace = \x -> (NoTrace    , x)
-
-data IOPipe a b = forall c. IOPipe (a -> IO c) (c -> IO b)
-a >>> b = IOPipe a b
-forever_ :: IOPipe a a -> [IOPipe a a]
-forever_ x = let ret = x : ret in ret
-
 playGame' =
   let
     io1 :: () -> IO String
@@ -47,9 +34,6 @@ playGame' =
     io2 :: String -> IO ()
     io2 = \phrase -> playPhrase maxMisses phrase
   in forever_ (io1 >>> io2)
-
-runIOPipe :: [IOPipe () ()] -> IO ()
-runIOPipe (IOPipe a b : xs) = forever $ return () >>= a >>= b
 
 playGame'' :: IO ()
 playGame'' = runIOPipe playGame'
