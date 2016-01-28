@@ -33,10 +33,10 @@ playGame' =
                         inputPhrase
     io2 :: String -> IO ()
     io2 = \phrase -> playPhrase maxMisses phrase
-  in forever_ (io1 >>> io2)
+  in ioForever (io1 >>> io2)
 
 playGame'' :: IO ()
-playGame'' = runIOPipe playGame'
+playGame'' = runIOPipe'_ playGame'
 
 playPhrase ∷ Int → String → IO ()
 playPhrase maxMisses phrase = go $ beginG maxMisses phrase
