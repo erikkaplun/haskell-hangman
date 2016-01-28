@@ -15,24 +15,22 @@ trace   = \x -> (Trace      , x)
 noTrace = \x -> (NoTrace    , x)
 
 
-data IOPipe :: * -> * -> * where
-  IOPipe  :: forall a b c. (a -> IO c) -> (c -> IO b) -> IOPipe a b
-  IOForev :: forall a    . IOPipe a a                 -> IOPipe a a
+data IOArrow :: * -> * -> * where
+  IOPipe  :: forall a b c. (a -> IO c) -> (c -> IO b) -> IOArrow a b
+  IOForev :: forall a    . IOArrow a a                -> IOArrow a a
 
-(>>>) :: forall a b c. (a -> IO c) -> (c -> IO b) -> IOPipe a b
-(>>>) = IOPipe
-ioForever :: forall a. IOPipe a a -> IOPipe a a
-ioForever = IOForev
+(>>>)   = IOPipe
+ioForev = IOForev
 
-runIOPipe   ::   IOPipe a  b  ->  a -> IO       b
-runIOPipe'  ::   IOPipe () b        -> IO       b
+runIOPipe  :: IOArrow a  b  ->  a -> IO       b
+runIOPipe' :: IOArrow () b        -> IO       b
 
-runIOPipe    = \case
-                 (IOPipe a  b) -> \x -> a x  >>= b
-                 (IOForev pipe) -> forever $ runIOPipe pipe
+runIOPipe (IOPipe  a b ) = \x -> a x  >>= b
+runIOPipe (IOForev pipe) = \x -> forever $ runIOPipe pipe x
+
 runIOPipe' x = runIOPipe x ()
 
-runIOPipe_  ::  IOPipe  a  b  ->  a -> IO                   ()
-runIOPipe'_ ::  IOPipe  () b        -> IO                   ()
+runIOPipe_  ::  IOArrow  a  b  ->  a -> IO                   ()
+runIOPipe'_ ::  IOArrow  () b        -> IO                   ()
 runIOPipe_  pipe x = void $ runIOPipe pipe x
 runIOPipe'_ pipe   = void $ runIOPipe pipe ()
