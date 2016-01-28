@@ -26,13 +26,13 @@ playGame = do
 
 playGame' =
   let
-    io1 = do clearScreen
-             putStrLn "Let's get started...\n"
-             inputPhrase
+    io1 = \() -> do clearScreen
+                    putStrLn "Let's get started...\n"
+                    inputPhrase
     io2 = \phrase -> playPhrase maxMisses phrase
-    io3 = \() -> io1
   in
-   (io1, io2, io3)
+   let ret = (io1, io2) : ret
+   in ret
 
 playPhrase ∷ Int → String → IO ()
 playPhrase maxMisses phrase = go $ beginG maxMisses phrase
