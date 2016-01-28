@@ -19,10 +19,10 @@ playGame = do
   clearScreen
   putStrLn "Let's get started...\n"
 
-  forever $ do phraseG ← inputWord
+  forever $ do phrase ← inputWord
                clearScreen
-               playWord maxMisses phraseG
 
+               playWord maxMisses phrase
 
 playWord ∷ Int → String → IO ()
 playWord maxMisses phrase = go $ beginG maxMisses phrase
