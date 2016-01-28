@@ -19,13 +19,13 @@ playGame = do
   clearScreen
   putStrLn "Let's get started...\n"
 
-  forever $ do phrase ← inputWord
+  forever $ do phrase ← inputPhrase
                clearScreen
 
-               playWord maxMisses phrase
+               playPhrase maxMisses phrase
 
-playWord ∷ Int → String → IO ()
-playWord maxMisses phrase = go $ beginG maxMisses phrase
+playPhrase ∷ Int → String → IO ()
+playPhrase maxMisses phrase = go $ beginG maxMisses phrase
   where
     go game = do
       clearScreen
@@ -44,10 +44,10 @@ clearScreen = putStrLn $ replicate 30 '\n'
 -- Input & Rendering --
 -----------------------
 
-inputWord = do
+inputPhrase = do
   putStrLn "Enter a word, phrase or sentence:"
   phraseG ← getLine
-  case phraseG of "" → inputWord
+  case phraseG of "" → inputPhrase
                   x  → return x
 
 inputGuess = do
