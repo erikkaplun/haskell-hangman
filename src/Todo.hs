@@ -1,6 +1,7 @@
 module Todo where
 
 data Diff a = Diff a
+            | DiffGroup [Diff a]
 
 data TaskSeq a = Begin { diffTS     :: Diff a
                        , continueTS :: TaskSeq a }
@@ -22,11 +23,12 @@ project =
 
   `andThen`
 
-  Diff "make ugliness mechanically traceable"
+  DiffGroup [ Diff "make uncontrolled IO controlled"
+            , Diff "make ugliness mechanically traceable" ]
 
   `andThen`
 
-  Diff  ( "make dependencies statically defined so that working on "
+  Diff  ( "make TODO dependencies statically defined so that working on "
           ++ "a task that depends on a more closely upcoming task is "
           ++ "forbidden by the compiler" )
 
